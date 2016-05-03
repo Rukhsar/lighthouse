@@ -1,1 +1,4 @@
-# Light House a Database Helper
+# Light House Database Framework
+
+### The Lightest PHP database framework to accelerate development
+

@@ -1,4 +1,4 @@
 # Light House Database Framework
 
-### The Lightest PHP database framework to accelerate development
+The Lightest PHP database framework to accelerate development
 

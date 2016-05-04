@@ -151,6 +151,21 @@ class LightHouse {
             throw new Exception($e->getMessage());
         }
     }
+    public function query($query)
+    {
+        if ($this->debug_mode)
+        {
+            echo $query;
+
+            $this->debug_mode = false;
+
+            return false;
+        }
+
+        array_push($this->logs, $query);
+
+        return $this->pdo->query($query);
+    }
 }
 
 

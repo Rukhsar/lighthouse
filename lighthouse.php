@@ -166,6 +166,28 @@ class LightHouse {
 
         return $this->pdo->query($query);
     }
+    public function exec($query)
+    {
+        if ($this->debug_mode)
+        {
+            echo $query;
+
+            $this->debug_mode = false;
+
+            return false;
+        }
+
+        array_push($this->logs, $query);
+
+        return $this->pdo->exec($query);
+    }
+
+    public function quote($string)
+    {
+        return $this->pdo->quote($string);
+    }
+
+
 }
 
 

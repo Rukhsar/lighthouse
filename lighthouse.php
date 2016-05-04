@@ -187,7 +187,41 @@ class LightHouse {
         return $this->pdo->quote($string);
     }
 
+    protected function column_quote($string)
+    {
+        return '"' . str_replace('.', '"."', preg_replace('/(^#|\(JSON\)\s*)/', '', $string)) . '"';
+    }
 
+    protected function column_push($columns)
+    {
+        if ($columns == '*')
+        {
+            return $columns;
+        }
+
+        if (is_string($columns))
+        {
+            $columns = array($columns);
+        }
+
+        $stack = array();
+
+        foreach ($columns as $key => $value)
+        {
+            preg_match('/([a-zA-Z0-9_\-\.]*)\s*\(([a-zA-Z0-9_\-]*)\)/i', $value, $match);
+
+            if (isset($match[ 1 ], $match[ 2 ]))
+            {
+                array_push($stack, $this->column_quote( $match[ 1 ] ) . ' AS ' . $this->column_quote( $match[ 2 ] ));
+            }
+            else
+            {
+                array_push($stack, $this->column_quote( $value ));
+            }
+        }
+
+        return implode($stack, ',');
+    }
 }
 
 

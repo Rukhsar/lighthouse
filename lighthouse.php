@@ -508,7 +508,142 @@ class LightHouse {
         return $where_clause;
     }
 
+    protected function select_context($table, $join, &$columns = null, $where = null, $column_fn = null)
+    {
+        $table = '"' . $this->prefix . $table . '"';
+        $join_key = is_array($join) ? array_keys($join) : null;
 
+        if (
+            isset($join_key[ 0 ]) &&
+            strpos($join_key[ 0 ], '[') === 0
+        )
+        {
+            $table_join = array();
+
+            $join_array = array(
+                '>' => 'LEFT',
+                '<' => 'RIGHT',
+                '<>' => 'FULL',
+                '><' => 'INNER'
+            );
+
+            foreach($join as $sub_table => $relation)
+            {
+                preg_match('/(\[(\<|\>|\>\<|\<\>)\])?([a-zA-Z0-9_\-]*)\s?(\(([a-zA-Z0-9_\-]*)\))?/', $sub_table, $match);
+
+                if ($match[ 2 ] != '' && $match[ 3 ] != '')
+                {
+                    if (is_string($relation))
+                    {
+                        $relation = 'USING ("' . $relation . '")';
+                    }
+
+                    if (is_array($relation))
+                    {
+                        // For ['column1', 'column2']
+                        if (isset($relation[ 0 ]))
+                        {
+                            $relation = 'USING ("' . implode($relation, '", "') . '")';
+                        }
+                        else
+                        {
+                            $joins = array();
+
+                            foreach ($relation as $key => $value)
+                            {
+                                $joins[] = $this->prefix . (
+                                    strpos($key, '.') > 0 ?
+                                        // For ['tableB.column' => 'column']
+                                        '"' . str_replace('.', '"."', $key) . '"' :
+
+                                        // For ['column1' => 'column2']
+                                        $table . '."' . $key . '"'
+                                    ) .
+                                    ' = ' .
+                                    '"' . (isset($match[ 5 ]) ? $match[ 5 ] : $match[ 3 ]) . '"."' . $value . '"';
+                            }
+
+                            $relation = 'ON ' . implode($joins, ' AND ');
+                        }
+                    }
+
+                    $table_join[] = $join_array[ $match[ 2 ] ] . ' JOIN "' . $this->prefix . $match[ 3 ] . '" ' . (isset($match[ 5 ]) ?  'AS "' . $match[ 5 ] . '" ' : '') . $relation;
+                }
+            }
+
+            $table .= ' ' . implode($table_join, ' ');
+        }
+        else
+        {
+            if (is_null($columns))
+            {
+                if (is_null($where))
+                {
+                    if (
+                        is_array($join) &&
+                        isset($column_fn)
+                    )
+                    {
+                        $where = $join;
+                        $columns = null;
+                    }
+                    else
+                    {
+                        $where = null;
+                        $columns = $join;
+                    }
+                }
+                else
+                {
+                    $where = $join;
+                    $columns = null;
+                }
+            }
+            else
+            {
+                $where = $columns;
+                $columns = $join;
+            }
+        }
+
+        if (isset($column_fn))
+        {
+            if ($column_fn == 1)
+            {
+                $column = '1';
+
+                if (is_null($where))
+                {
+                    $where = $columns;
+                }
+            }
+            else
+            {
+                if (empty($columns))
+                {
+                    $columns = '*';
+                    $where = $join;
+                }
+
+                $column = $column_fn . '(' . $this->column_push($columns) . ')';
+            }
+        }
+        else
+        {
+            $column = $this->column_push($columns);
+        }
+
+        return 'SELECT ' . $column . ' FROM ' . $table . $this->where_clause($where);
+    }
+
+    public function select($table, $join, $columns = null, $where = null)
+    {
+        $query = $this->query($this->select_context($table, $join, $columns, $where));
+
+        return $query ? $query->fetchAll(
+            (is_string($columns) && $columns != '*') ? PDO::FETCH_COLUMN : PDO::FETCH_ASSOC
+        ) : false;
+    }
 
 }
 

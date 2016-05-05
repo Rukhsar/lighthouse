@@ -222,6 +222,32 @@ class LightHouse {
 
         return implode($stack, ',');
     }
+    protected function array_quote($array)
+    {
+        $temp = array();
+        foreach ($array as $value)
+        {
+            $temp[] = is_int($value) ? $value : $this->pdo->quote($value);
+        }
+        return implode($temp, ',');
+    }
+    protected function inner_conjunct($data, $conjunctor, $outer_conjunctor)
+    {
+        $haystack = array();
+        foreach ($data as $value)
+        {
+            $haystack[] = '(' . $this->data_implode($value, $conjunctor) . ')';
+        }
+        return implode($outer_conjunctor . ' ', $haystack);
+    }
+    protected function fn_quote($column, $string)
+    {
+        return (strpos($column, '#') === 0 && preg_match('/^[A-Z0-9\_]*\([^)]*\)$/', $string)) ?
+            $string :
+            $this->quote($string);
+    }
+
+
 }
 
 

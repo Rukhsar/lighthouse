@@ -379,6 +379,134 @@ class LightHouse {
         return implode($conjunctor . ' ', $wheres);
     }
 
+    protected function where_clause($where)
+    {
+        $where_clause = '';
+
+        if (is_array($where))
+        {
+            $where_keys = array_keys($where);
+            $where_AND = preg_grep("/^AND\s*#?$/i", $where_keys);
+            $where_OR = preg_grep("/^OR\s*#?$/i", $where_keys);
+
+            $single_condition = array_diff_key($where, array_flip(
+                explode(' ', 'AND OR GROUP ORDER HAVING LIMIT LIKE MATCH')
+            ));
+
+            if ($single_condition != array())
+            {
+                $condition = $this->data_implode($single_condition, '');
+
+                if ($condition != '')
+                {
+                    $where_clause = ' WHERE ' . $condition;
+                }
+            }
+
+            if (!empty($where_AND))
+            {
+                $value = array_values($where_AND);
+                $where_clause = ' WHERE ' . $this->data_implode($where[ $value[ 0 ] ], ' AND');
+            }
+
+            if (!empty($where_OR))
+            {
+                $value = array_values($where_OR);
+                $where_clause = ' WHERE ' . $this->data_implode($where[ $value[ 0 ] ], ' OR');
+            }
+
+            if (isset($where[ 'MATCH' ]))
+            {
+                $MATCH = $where[ 'MATCH' ];
+
+                if (is_array($MATCH) && isset($MATCH[ 'columns' ], $MATCH[ 'keyword' ]))
+                {
+                    $where_clause .= ($where_clause != '' ? ' AND ' : ' WHERE ') . ' MATCH ("' . str_replace('.', '"."', implode($MATCH[ 'columns' ], '", "')) . '") AGAINST (' . $this->quote($MATCH[ 'keyword' ]) . ')';
+                }
+            }
+
+            if (isset($where[ 'GROUP' ]))
+            {
+                $where_clause .= ' GROUP BY ' . $this->column_quote($where[ 'GROUP' ]);
+
+                if (isset($where[ 'HAVING' ]))
+                {
+                    $where_clause .= ' HAVING ' . $this->data_implode($where[ 'HAVING' ], ' AND');
+                }
+            }
+
+            if (isset($where[ 'ORDER' ]))
+            {
+                $rsort = '/(^[a-zA-Z0-9_\-\.]*)(\s*(DESC|ASC))?/';
+                $ORDER = $where[ 'ORDER' ];
+
+                if (is_array($ORDER))
+                {
+                    if (
+                        isset($ORDER[ 1 ]) &&
+                        is_array($ORDER[ 1 ])
+                    )
+                    {
+                        $where_clause .= ' ORDER BY FIELD(' . $this->column_quote($ORDER[ 0 ]) . ', ' . $this->array_quote($ORDER[ 1 ]) . ')';
+                    }
+                    else
+                    {
+                        $stack = array();
+
+                        foreach ($ORDER as $column)
+                        {
+                            preg_match($rsort, $column, $order_match);
+
+                            array_push($stack, '"' . str_replace('.', '"."', $order_match[ 1 ]) . '"' . (isset($order_match[ 3 ]) ? ' ' . $order_match[ 3 ] : ''));
+                        }
+
+                        $where_clause .= ' ORDER BY ' . implode($stack, ',');
+                    }
+                }
+                else
+                {
+                    preg_match($rsort, $ORDER, $order_match);
+
+                    $where_clause .= ' ORDER BY "' . str_replace('.', '"."', $order_match[ 1 ]) . '"' . (isset($order_match[ 3 ]) ? ' ' . $order_match[ 3 ] : '');
+                }
+            }
+
+            if (isset($where[ 'LIMIT' ]))
+            {
+                $LIMIT = $where[ 'LIMIT' ];
+
+                if (is_numeric($LIMIT))
+                {
+                    $where_clause .= ' LIMIT ' . $LIMIT;
+                }
+
+                if (
+                    is_array($LIMIT) &&
+                    is_numeric($LIMIT[ 0 ]) &&
+                    is_numeric($LIMIT[ 1 ])
+                )
+                {
+                    if ($this->database_type === 'pgsql')
+                    {
+                        $where_clause .= ' OFFSET ' . $LIMIT[ 0 ] . ' LIMIT ' . $LIMIT[ 1 ];
+                    }
+                    else
+                    {
+                        $where_clause .= ' LIMIT ' . $LIMIT[ 0 ] . ',' . $LIMIT[ 1 ];
+                    }
+                }
+            }
+        }
+        else
+        {
+            if ($where != null)
+            {
+                $where_clause .= ' ' . $where;
+            }
+        }
+
+        return $where_clause;
+    }
 
 
 

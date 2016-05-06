@@ -687,6 +687,46 @@ class LightHouse {
         return count($lastId) > 1 ? $lastId : $lastId[ 0 ];
     }
 
+    public function update($table, $data, $where = null)
+    {
+        $fields = array();
+        foreach ($data as $key => $value)
+        {
+            preg_match('/([\w]+)(\[(\+|\-|\*|\/)\])?/i', $key, $match);
+            if (isset($match[ 3 ]))
+            {
+                if (is_numeric($value))
+                {
+                    $fields[] = $this->column_quote($match[ 1 ]) . ' = ' . $this->column_quote($match[ 1 ]) . ' ' . $match[ 3 ] . ' ' . $value;
+                }
+            }
+            else
+            {
+                $column = $this->column_quote($key);
+                switch (gettype($value))
+                {
+                    case 'NULL':
+                        $fields[] = $column . ' = NULL';
+                        break;
+                    case 'array':
+                        preg_match("/\(JSON\)\s*([\w]+)/i", $key, $column_match);
+                        $fields[] = $column . ' = ' . $this->quote(
+                                isset($column_match[ 0 ]) ? json_encode($value) : serialize($value)
+                            );
+                        break;
+                    case 'boolean':
+                        $fields[] = $column . ' = ' . ($value ? '1' : '0');
+                        break;
+                    case 'integer':
+                    case 'double':
+                    case 'string':
+                        $fields[] = $column . ' = ' . $this->fn_quote($key, $value);
+                        break;
+                }
+            }
+        }
+        return $this->exec('UPDATE "' . $this->prefix . $table . '" SET ' . implode(', ', $fields) . $this->where_clause($where));
+    }
 
 
 

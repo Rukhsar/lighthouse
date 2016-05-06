@@ -728,6 +728,44 @@ class LightHouse {
         return $this->exec('UPDATE "' . $this->prefix . $table . '" SET ' . implode(', ', $fields) . $this->where_clause($where));
     }
 
+    public function delete($table, $where)
+    {
+        return $this->exec('DELETE FROM "' . $this->prefix . $table . '"' . $this->where_clause($where));
+    }
+    public function replace($table, $columns, $search = null, $replace = null, $where = null)
+    {
+        if (is_array($columns))
+        {
+            $replace_query = array();
+            foreach ($columns as $column => $replacements)
+            {
+                foreach ($replacements as $replace_search => $replace_replacement)
+                {
+                    $replace_query[] = $column . ' = REPLACE(' . $this->column_quote($column) . ', ' . $this->quote($replace_search) . ', ' . $this->quote($replace_replacement) . ')';
+                }
+            }
+            $replace_query = implode(', ', $replace_query);
+            $where = $search;
+        }
+        else
+        {
+            if (is_array($search))
+            {
+                $replace_query = array();
+                foreach ($search as $replace_search => $replace_replacement)
+                {
+                    $replace_query[] = $columns . ' = REPLACE(' . $this->column_quote($columns) . ', ' . $this->quote($replace_search) . ', ' . $this->quote($replace_replacement) . ')';
+                }
+                $replace_query = implode(', ', $replace_query);
+                $where = $replace;
+            }
+            else
+            {
+                $replace_query = $columns . ' = REPLACE(' . $this->column_quote($columns) . ', ' . $this->quote($search) . ', ' . $this->quote($replace) . ')';
+            }
+        }
+        return $this->exec('UPDATE "' . $this->prefix . $table . '" SET ' . $replace_query . $this->where_clause($where));
+    }
 
 
 

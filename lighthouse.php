@@ -767,6 +767,36 @@ class LightHouse {
         return $this->exec('UPDATE "' . $this->prefix . $table . '" SET ' . $replace_query . $this->where_clause($where));
     }
 
+    public function get($table, $join = null, $column = null, $where = null)
+    {
+        $query = $this->query($this->select_context($table, $join, $column, $where) . ' LIMIT 1');
+
+        if ($query)
+        {
+            $data = $query->fetchAll(PDO::FETCH_ASSOC);
+
+            if (isset($data[ 0 ]))
+            {
+                $column = $where == null ? $join : $column;
+
+                if (is_string($column) && $column != '*')
+                {
+                    return $data[ 0 ][ $column ];
+                }
+
+                return $data[ 0 ];
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+
 
 
 }

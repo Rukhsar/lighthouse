@@ -797,6 +797,28 @@ class LightHouse {
         }
     }
 
+    public function has($table, $join, $where = null)
+    {
+        $column = null;
+
+        $query = $this->query('SELECT EXISTS(' . $this->select_context($table, $join, $column, $where, 1) . ')');
+
+        if ($query)
+        {
+            return $query->fetchColumn() === '1';
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public function count($table, $join = null, $column = null, $where = null)
+    {
+        $query = $this->query($this->select_context($table, $join, $column, $where, 'COUNT'));
+
+        return $query ? 0 + $query->fetchColumn() : false;
+    }
 
 
 }

@@ -850,9 +850,23 @@ class LightHouse {
             return false;
         }
     }
+    public function avg($table, $join, $column = null, $where = null)
+    {
+        $query = $this->query($this->select_context($table, $join, $column, $where, 'AVG'));
+
+        return $query ? 0 + $query->fetchColumn() : false;
+    }
+
+    public function sum($table, $join, $column = null, $where = null)
+    {
+        $query = $this->query($this->select_context($table, $join, $column, $where, 'SUM'));
+
+        return $query ? 0 + $query->fetchColumn() : false;
+    }
+
+
+
 
 
 }
-
-
 ?>

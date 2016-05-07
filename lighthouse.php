@@ -864,7 +864,68 @@ class LightHouse {
         return $query ? 0 + $query->fetchColumn() : false;
     }
 
+    public function action($actions)
+    {
+        if (is_callable($actions))
+        {
+            $this->pdo->beginTransaction();
 
+            $result = $actions($this);
+
+            if ($result === false)
+            {
+                $this->pdo->rollBack();
+            }
+            else
+            {
+                $this->pdo->commit();
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public function debug()
+    {
+        $this->debug_mode = true;
+
+        return $this;
+    }
+
+    public function error()
+    {
+        return $this->pdo->errorInfo();
+    }
+
+    public function last_query()
+    {
+        return end($this->logs);
+    }
+
+    public function log()
+    {
+        return $this->logs;
+    }
+
+    public function info()
+    {
+        $output = array(
+            'server' => 'SERVER_INFO',
+            'driver' => 'DRIVER_NAME',
+            'client' => 'CLIENT_VERSION',
+            'version' => 'SERVER_VERSION',
+            'connection' => 'CONNECTION_STATUS'
+        );
+
+        foreach ($output as $key => $value)
+        {
+            $output[ $key ] = $this->pdo->getAttribute(constant('PDO::ATTR_' . $value));
+        }
+
+        return $output;
+    }
 
 
 

@@ -819,6 +819,37 @@ class LightHouse {
 
         return $query ? 0 + $query->fetchColumn() : false;
     }
+    public function max($table, $join, $column = null, $where = null)
+    {
+        $query = $this->query($this->select_context($table, $join, $column, $where, 'MAX'));
+
+        if ($query)
+        {
+            $max = $query->fetchColumn();
+
+            return is_numeric($max) ? $max + 0 : $max;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public function min($table, $join, $column = null, $where = null)
+    {
+        $query = $this->query($this->select_context($table, $join, $column, $where, 'MIN'));
+
+        if ($query)
+        {
+            $min = $query->fetchColumn();
+
+            return is_numeric($min) ? $min + 0 : $min;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
 
 }

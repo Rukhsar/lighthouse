@@ -926,8 +926,5 @@ class LightHouse {
 
         return $output;
     }
-
-
-
 }
 ?>

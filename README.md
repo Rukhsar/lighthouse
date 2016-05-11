@@ -1,6 +1,6 @@
 # Light House Database Framework
 
-The Lightest PHP database framework to accelerate development.
+The Lightest PHP database framework for rapid application development.
 
 - **Easy** : Extremely easy to learn and use
 - **Powerful** : Support various common and complex SQL queries

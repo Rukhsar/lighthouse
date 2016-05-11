@@ -36,5 +36,5 @@ $database->insert('account', [
     'lang' => ['en', 'fr', 'jp', 'cn']
 ]);
 ```
-
+More documentation coming soon
 
